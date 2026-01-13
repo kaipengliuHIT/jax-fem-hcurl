@@ -108,16 +108,151 @@ def get_elements(ele_type):
         basix_face_ele = basix.CellType.interval
         gauss_order = 2 # 3, full integration
         degree = 2
+    # ============== Nedelec (first kind) H(curl) elements ==============
+    # DOFs are associated with edges, suitable for electromagnetic problems
+    elif ele_type == 'N1E_TRI1':  # Nedelec first kind, degree 1, triangle
+        re_order = None  # Nedelec elements use edge-based DOFs, no node reordering needed
+        element_family = basix.ElementFamily.N1E
+        basix_ele = basix.CellType.triangle
+        basix_face_ele = basix.CellType.interval
+        gauss_order = 2
+        degree = 1
+    elif ele_type == 'N1E_TRI2':  # Nedelec first kind, degree 2, triangle
+        re_order = None
+        element_family = basix.ElementFamily.N1E
+        basix_ele = basix.CellType.triangle
+        basix_face_ele = basix.CellType.interval
+        gauss_order = 4
+        degree = 2
+    elif ele_type == 'N1E_TET1':  # Nedelec first kind, degree 1, tetrahedron
+        re_order = None
+        element_family = basix.ElementFamily.N1E
+        basix_ele = basix.CellType.tetrahedron
+        basix_face_ele = basix.CellType.triangle
+        gauss_order = 2
+        degree = 1
+    elif ele_type == 'N1E_TET2':  # Nedelec first kind, degree 2, tetrahedron
+        re_order = None
+        element_family = basix.ElementFamily.N1E
+        basix_ele = basix.CellType.tetrahedron
+        basix_face_ele = basix.CellType.triangle
+        gauss_order = 4
+        degree = 2
+    elif ele_type == 'N1E_QUAD1':  # Nedelec first kind, degree 1, quadrilateral
+        re_order = None
+        element_family = basix.ElementFamily.N1E
+        basix_ele = basix.CellType.quadrilateral
+        basix_face_ele = basix.CellType.interval
+        gauss_order = 2
+        degree = 1
+    elif ele_type == 'N1E_QUAD2':  # Nedelec first kind, degree 2, quadrilateral
+        re_order = None
+        element_family = basix.ElementFamily.N1E
+        basix_ele = basix.CellType.quadrilateral
+        basix_face_ele = basix.CellType.interval
+        gauss_order = 4
+        degree = 2
+    elif ele_type == 'N1E_HEX1':  # Nedelec first kind, degree 1, hexahedron
+        re_order = None
+        element_family = basix.ElementFamily.N1E
+        basix_ele = basix.CellType.hexahedron
+        basix_face_ele = basix.CellType.quadrilateral
+        gauss_order = 2
+        degree = 1
+    elif ele_type == 'N1E_HEX2':  # Nedelec first kind, degree 2, hexahedron
+        re_order = None
+        element_family = basix.ElementFamily.N1E
+        basix_ele = basix.CellType.hexahedron
+        basix_face_ele = basix.CellType.quadrilateral
+        gauss_order = 4
+        degree = 2
+    # ============== Nedelec (second kind) H(curl) elements ==============
+    elif ele_type == 'N2E_TRI1':  # Nedelec second kind, degree 1, triangle
+        re_order = None
+        element_family = basix.ElementFamily.N2E
+        basix_ele = basix.CellType.triangle
+        basix_face_ele = basix.CellType.interval
+        gauss_order = 2
+        degree = 1
+    elif ele_type == 'N2E_TRI2':  # Nedelec second kind, degree 2, triangle
+        re_order = None
+        element_family = basix.ElementFamily.N2E
+        basix_ele = basix.CellType.triangle
+        basix_face_ele = basix.CellType.interval
+        gauss_order = 4
+        degree = 2
+    elif ele_type == 'N2E_TET1':  # Nedelec second kind, degree 1, tetrahedron
+        re_order = None
+        element_family = basix.ElementFamily.N2E
+        basix_ele = basix.CellType.tetrahedron
+        basix_face_ele = basix.CellType.triangle
+        gauss_order = 2
+        degree = 1
+    elif ele_type == 'N2E_TET2':  # Nedelec second kind, degree 2, tetrahedron
+        re_order = None
+        element_family = basix.ElementFamily.N2E
+        basix_ele = basix.CellType.tetrahedron
+        basix_face_ele = basix.CellType.triangle
+        gauss_order = 4
+        degree = 2
+    elif ele_type == 'N2E_QUAD1':  # Nedelec second kind, degree 1, quadrilateral
+        re_order = None
+        element_family = basix.ElementFamily.N2E
+        basix_ele = basix.CellType.quadrilateral
+        basix_face_ele = basix.CellType.interval
+        gauss_order = 2
+        degree = 1
+    elif ele_type == 'N2E_QUAD2':  # Nedelec second kind, degree 2, quadrilateral
+        re_order = None
+        element_family = basix.ElementFamily.N2E
+        basix_ele = basix.CellType.quadrilateral
+        basix_face_ele = basix.CellType.interval
+        gauss_order = 4
+        degree = 2
+    elif ele_type == 'N2E_HEX1':  # Nedelec second kind, degree 1, hexahedron
+        re_order = None
+        element_family = basix.ElementFamily.N2E
+        basix_ele = basix.CellType.hexahedron
+        basix_face_ele = basix.CellType.quadrilateral
+        gauss_order = 2
+        degree = 1
+    elif ele_type == 'N2E_HEX2':  # Nedelec second kind, degree 2, hexahedron
+        re_order = None
+        element_family = basix.ElementFamily.N2E
+        basix_ele = basix.CellType.hexahedron
+        basix_face_ele = basix.CellType.quadrilateral
+        gauss_order = 4
+        degree = 2
     else:
-        raise NotImplementedError
+        raise NotImplementedError(f"Element type '{ele_type}' is not implemented. "
+                                  f"Supported types: HEX8, HEX20, HEX27, TET4, TET10, QUAD4, QUAD8, TRI3, TRI6, "
+                                  f"N1E_TRI1, N1E_TRI2, N1E_TET1, N1E_TET2, N1E_QUAD1, N1E_QUAD2, N1E_HEX1, N1E_HEX2, "
+                                  f"N2E_TRI1, N2E_TRI2, N2E_TET1, N2E_TET2, N2E_QUAD1, N2E_QUAD2, N2E_HEX1, N2E_HEX2")
 
     return element_family, basix_ele, basix_face_ele, gauss_order, degree, re_order
+
+
+def is_hcurl_element(ele_type):
+    """Check if the element type is an H(curl) conforming element (Nedelec).
+    
+    Parameters
+    ----------
+    ele_type : str
+        Element type string
+        
+    Returns
+    -------
+    bool
+        True if the element is an H(curl) element (Nedelec first or second kind)
+    """
+    return ele_type.startswith('N1E_') or ele_type.startswith('N2E_')
 
 
 def reorder_inds(inds, re_order):
     """Apply re-ordering transformation for node indices.
     """
-
+    if re_order is None:
+        return inds
     new_inds = []
     for ind in inds.reshape(-1):
         new_inds.append(onp.argwhere(re_order == ind))
@@ -137,12 +272,22 @@ def get_shape_vals_and_grads(ele_type, gauss_order=None):
 
     Returns
     -------
-    shape_values: NumpyArray
-        Shape is (num_quads, num_nodes), e.g, (8, 8) for HEX8 element.
-    shape_grads_ref: NumpyArray
-        Shape is (num_quads, num_nodes, dim), e.g, (8, 8, 3) for HEX8 element.
-    weights: NumpyArray
-        Shape is (num_quads,), e.g, (8,) for HEX8 element.
+    For scalar Lagrange elements:
+        shape_values: NumpyArray
+            Shape is (num_quads, num_nodes), e.g, (8, 8) for HEX8 element.
+        shape_grads_ref: NumpyArray
+            Shape is (num_quads, num_nodes, dim), e.g, (8, 8, 3) for HEX8 element.
+        weights: NumpyArray
+            Shape is (num_quads,), e.g, (8,) for HEX8 element.
+    
+    For H(curl) Nedelec elements:
+        shape_values: NumpyArray
+            Shape is (num_quads, num_dofs, dim), e.g, (3, 3, 2) for N1E_TRI1 element.
+            These are vector-valued basis functions.
+        shape_grads_ref: NumpyArray
+            Shape is (num_quads, num_dofs, dim, dim) for derivatives.
+        weights: NumpyArray
+            Shape is (num_quads,), e.g, (3,) for N1E_TRI1 element.
     """
     element_family, basix_ele, basix_face_ele, gauss_order_default, degree, re_order = get_elements(ele_type)
 
@@ -151,10 +296,31 @@ def get_shape_vals_and_grads(ele_type, gauss_order=None):
 
     quad_points, weights = basix.make_quadrature(basix_ele, gauss_order)
     element = basix.create_element(element_family, basix_ele, degree)
-    vals_and_grads = element.tabulate(1, quad_points)[:, :, re_order, :]
-    shape_values = vals_and_grads[0, :, :, 0]
-    shape_grads_ref = onp.transpose(vals_and_grads[1:, :, :, 0], axes=(1, 2, 0))
-    logger.debug(f"ele_type = {ele_type}, quad_points.shape = (num_quads, dim) = {quad_points.shape}")
+    
+    if is_hcurl_element(ele_type):
+        # H(curl) elements have vector-valued basis functions
+        # tabulate returns shape: (num_derivatives, num_points, num_dofs, value_size)
+        # For H(curl) in 2D: value_size = 2, in 3D: value_size = 3
+        vals_and_grads = element.tabulate(1, quad_points)
+        # vals_and_grads[0] is the function values: (num_points, num_dofs, dim)
+        shape_values = vals_and_grads[0]  # (num_quads, num_dofs, dim)
+        
+        # For gradients, we need derivatives w.r.t each spatial direction
+        # vals_and_grads[1:dim+1] contains derivatives
+        dim = quad_points.shape[1]
+        # shape_grads_ref: (num_quads, num_dofs, dim, dim) 
+        # [i, j, k, l] = d(basis_j component k)/d(x_l) at quad point i
+        shape_grads_ref = onp.stack([vals_and_grads[i+1] for i in range(dim)], axis=-1)
+        
+        logger.debug(f"ele_type = {ele_type} (H(curl)), quad_points.shape = {quad_points.shape}, "
+                     f"shape_values.shape = {shape_values.shape}, shape_grads_ref.shape = {shape_grads_ref.shape}")
+    else:
+        # Standard scalar Lagrange elements
+        vals_and_grads = element.tabulate(1, quad_points)[:, :, re_order, :]
+        shape_values = vals_and_grads[0, :, :, 0]
+        shape_grads_ref = onp.transpose(vals_and_grads[1:, :, :, 0], axes=(1, 2, 0))
+        logger.debug(f"ele_type = {ele_type}, quad_points.shape = (num_quads, dim) = {quad_points.shape}")
+    
     return shape_values, shape_grads_ref, weights
 
 
@@ -224,9 +390,20 @@ def get_face_shape_vals_and_grads(ele_type, gauss_order=None):
     face_inds = reorder_inds(face_inds, re_order)
     num_faces, num_face_quads, dim = face_quad_points.shape
     element = basix.create_element(element_family, basix_ele, degree)
-    vals_and_grads = element.tabulate(1, face_quad_points.reshape(-1, dim))[:, :, re_order, :]
-    face_shape_vals = vals_and_grads[0, :, :, 0].reshape(num_faces, num_face_quads, -1)
-    face_shape_grads_ref = vals_and_grads[1:, :, :, 0].reshape(dim, num_faces, num_face_quads, -1)
-    face_shape_grads_ref = onp.transpose(face_shape_grads_ref, axes=(1, 2, 3, 0))
+    
+    if is_hcurl_element(ele_type):
+        # H(curl) elements have vector-valued basis functions
+        vals_and_grads = element.tabulate(1, face_quad_points.reshape(-1, dim))
+        # face_shape_vals: (num_faces, num_face_quads, num_dofs, dim)
+        face_shape_vals = vals_and_grads[0].reshape(num_faces, num_face_quads, -1, dim)
+        # face_shape_grads_ref: (num_faces, num_face_quads, num_dofs, dim, dim)
+        face_shape_grads_ref = onp.stack([vals_and_grads[i+1] for i in range(dim)], axis=-1)
+        face_shape_grads_ref = face_shape_grads_ref.reshape(num_faces, num_face_quads, -1, dim, dim)
+    else:
+        vals_and_grads = element.tabulate(1, face_quad_points.reshape(-1, dim))[:, :, re_order, :]
+        face_shape_vals = vals_and_grads[0, :, :, 0].reshape(num_faces, num_face_quads, -1)
+        face_shape_grads_ref = vals_and_grads[1:, :, :, 0].reshape(dim, num_faces, num_face_quads, -1)
+        face_shape_grads_ref = onp.transpose(face_shape_grads_ref, axes=(1, 2, 3, 0))
+    
     logger.debug(f"face_quad_points.shape = (num_faces, num_face_quads, dim) = {face_quad_points.shape}")
     return face_shape_vals, face_shape_grads_ref, face_weights, face_normals, face_inds
