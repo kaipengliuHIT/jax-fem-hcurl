@@ -23,14 +23,22 @@ JAX-FEM is Automatic Differentiation (AD) + Finite Element Method (FEM), and we 
 - 2D quadrilateral/triangle elements
 - 3D hexahedron/tetrahedron elements
 - First and second order elements
+- **H(curl) conforming Nedelec edge elements** for electromagnetic problems
+  - 2D: N1E/N2E on triangles and quadrilaterals
+  - 3D: N1E/N2E on tetrahedra and hexahedra
+  - Covariant Piola transformation for physical basis functions
+  - Curl-curl and mass matrix assembly
 - Dirichlet/Neumann/Robin boundary conditions
 - Linear and nonlinear analysis including
   - Heat equation
   - Linear elasticity
   - Hyperelasticity
   - Plasticity (macro and crystal plasticity)
+  - **Maxwell equations** (time-harmonic electromagnetic problems)
 - Multi-physics problems
 - Integration with PETSc for solver options
+  - **HYPRE AMS preconditioner** for efficient Maxwell solvers
+  - BoomerAMG, ILU, Jacobi, and other preconditioners
 - Differentiable programming for solving inverse/design problems __without__ deriving sensitivities by hand, e.g.,
   - Topology optimization
   - Optimal thermal control
@@ -76,6 +84,13 @@ JAX-FEM is Automatic Differentiation (AD) + Finite Element Method (FEM), and we 
 </p>
 <p align="middle">
     <em >Topology optimization with differentiable simulation.</em>
+</p>
+
+<p align="middle">
+  <img src="examples/maxwell_ams_solution.png" width="720" />
+</p>
+<p align="middle">
+    <em >Maxwell equations with H(curl) Nedelec elements: edge DOF values (left) and field magnitude (right).</em>
 </p>
 
 
