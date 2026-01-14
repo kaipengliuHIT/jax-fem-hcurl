@@ -72,14 +72,54 @@ def umfpack_solve(A, b):
     logger.debug(f'Scipy Solver - Finished solving, linear solve res = {np.linalg.norm(Asp @ x - b)}')
     return x
 
-def petsc_solve(A, b, ksp_type, pc_type):
+def _to_petsc_mat(mat):
+    if isinstance(mat, PETSc.Mat):
+        return mat
+    if scipy.sparse.issparse(mat) or isinstance(mat, scipy.sparse.sparray):
+        mat_csr = mat.tocsr()
+        return PETSc.Mat().createAIJ(
+            size=mat_csr.shape,
+            csr=(
+                mat_csr.indptr.astype(PETSc.IntType, copy=False),
+                mat_csr.indices.astype(PETSc.IntType, copy=False),
+                mat_csr.data,
+            ),
+        )
+    raise TypeError(f"Unsupported matrix type for PETSc conversion: {type(mat)}")
+
+
+def petsc_solve(A, b, ksp_type, pc_type, pc_options=None):
+    if pc_options is None:
+        pc_options = {}
     rhs = PETSc.Vec().createSeq(len(b))
     rhs.setValues(range(len(b)), onp.array(b))
     ksp = PETSc.KSP().create()
     ksp.setOperators(A)
     ksp.setFromOptions()
     ksp.setType(ksp_type)
-    ksp.pc.setType(pc_type)
+    pc = ksp.getPC()
+    pc.setType(pc_type)
+
+    if pc_type == 'hypre':
+        hypre_type = pc_options.get('hypre_type', None)
+        if hypre_type is not None:
+            pc.setHYPREType(hypre_type)
+
+        if hypre_type in {'ams', 'ads'}:
+            discrete_gradient = pc_options.get('discrete_gradient', None)
+            if discrete_gradient is None:
+                raise ValueError("HYPRE AMS/ADS requires 'discrete_gradient' in solver_options['petsc_solver']")
+            pc.setHYPREDiscreteGradient(_to_petsc_mat(discrete_gradient))
+            
+            coordinates = pc_options.get('coordinates', None)
+            if coordinates is not None:
+                if isinstance(coordinates, onp.ndarray):
+                    pc.setCoordinates(coordinates)
+
+        if hypre_type == 'ads':
+            discrete_curl = pc_options.get('discrete_curl', None)
+            if discrete_curl is not None:
+                pc.setHYPREDiscreteCurl(_to_petsc_mat(discrete_curl))
 
     # TODO: This works better. Do we need to generalize the code a little bit?
     if ksp_type == 'tfqmr':
@@ -186,9 +226,10 @@ def linear_solver(A, b, x0, solver_options):
     elif 'umfpack_solver' in solver_options:
         x = umfpack_solve(A, b)
     elif 'petsc_solver' in solver_options:   
-        ksp_type = solver_options['petsc_solver']['ksp_type'] if 'ksp_type' in solver_options['petsc_solver'] else 'bcgsl' 
-        pc_type = solver_options['petsc_solver']['pc_type'] if 'pc_type' in solver_options['petsc_solver'] else 'ilu'
-        x = petsc_solve(A, b, ksp_type, pc_type)
+        petsc_options = solver_options['petsc_solver']
+        ksp_type = petsc_options['ksp_type'] if 'ksp_type' in petsc_options else 'bcgsl' 
+        pc_type = petsc_options['pc_type'] if 'pc_type' in petsc_options else 'ilu'
+        x = petsc_solve(A, b, ksp_type, pc_type, pc_options=petsc_options)
     elif 'custom_solver' in solver_options:
         # Users can define their own solver
         custom_solver = solver_options['custom_solver']

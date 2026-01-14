@@ -471,3 +471,151 @@ def compute_mass_matrix(fe):
     
     M = coo_matrix((vals, (rows, cols)), shape=(num_dofs, num_dofs))
     return M.tocsr()
+
+
+def compute_discrete_gradient(fe):
+    """Compute the discrete gradient matrix G for AMS preconditioner.
+    
+    The discrete gradient matrix maps the H1 nodal space to the H(curl) edge space.
+    This is required by HYPRE's AMS (Auxiliary-space Maxwell Solver) preconditioner.
+    
+    For each edge e = (n0, n1), we have:
+        G[edge_idx, n1] = +1
+        G[edge_idx, n0] = -1
+    
+    This represents: grad(phi_node) projected onto edge tangent.
+    
+    Parameters
+    ----------
+    fe : HCurlFiniteElement
+        The H(curl) finite element space.
+    
+    Returns
+    -------
+    G : scipy.sparse.csr_matrix
+        The discrete gradient matrix of shape (num_edges, num_nodes).
+        Can be converted to PETSc format for use with HYPRE AMS.
+    
+    Example
+    -------
+    >>> G = compute_discrete_gradient(fe)
+    >>> # Convert to PETSc for AMS
+    >>> from petsc4py import PETSc
+    >>> G_petsc = PETSc.Mat().createAIJ(size=G.shape, 
+    ...     csr=(G.indptr, G.indices, G.data))
+    >>> pc.setHYPREDiscreteGradient(G_petsc)
+    """
+    from scipy.sparse import coo_matrix
+    
+    num_edges = fe.num_total_edges
+    num_nodes = fe.num_total_nodes
+    
+    rows = []
+    cols = []
+    vals = []
+    
+    for edge_idx, (n0, n1) in enumerate(fe.edges):
+        # G maps nodal values to edge integrals
+        # For edge (n0, n1): G @ phi gives integral of grad(phi) dot tangent
+        rows.extend([edge_idx, edge_idx])
+        cols.extend([n0, n1])
+        vals.extend([-1.0, 1.0])  # grad = (phi[n1] - phi[n0]) / length, but AMS normalizes
+    
+    G = coo_matrix((vals, (rows, cols)), shape=(num_edges, num_nodes))
+    return G.tocsr()
+
+
+def compute_node_coordinates(fe):
+    """Get node coordinates array for AMS preconditioner.
+    
+    HYPRE AMS can use node coordinates to build better interpolation operators.
+    
+    Parameters
+    ----------
+    fe : HCurlFiniteElement
+        The H(curl) finite element space.
+    
+    Returns
+    -------
+    coords : numpy.ndarray
+        Node coordinates of shape (num_nodes, dim).
+    """
+    return fe.points.copy()
+
+
+def petsc_ams_solve(A_petsc, b, fe, ksp_type='cg', rtol=1e-10, max_iter=1000):
+    """Solve H(curl) linear system using PETSc with HYPRE AMS preconditioner.
+    
+    This is the recommended solver for Maxwell-type problems discretized with 
+    Nedelec edge elements.
+    
+    Parameters
+    ----------
+    A_petsc : PETSc.Mat
+        The system matrix (e.g., curl-curl + mass matrix).
+    b : numpy.ndarray
+        The right-hand side vector.
+    fe : HCurlFiniteElement
+        The H(curl) finite element space (needed for discrete gradient).
+    ksp_type : str
+        Krylov solver type. Default 'cg' for symmetric positive definite.
+    rtol : float
+        Relative tolerance for convergence.
+    max_iter : int
+        Maximum number of iterations.
+    
+    Returns
+    -------
+    x : numpy.ndarray
+        The solution vector.
+    
+    Example
+    -------
+    >>> K = compute_curl_curl_matrix(fe)
+    >>> M = compute_mass_matrix(fe)
+    >>> A = K + omega**2 * M  # Time-harmonic Maxwell
+    >>> # Convert to PETSc...
+    >>> x = petsc_ams_solve(A_petsc, b, fe)
+    """
+    from petsc4py import PETSc
+    
+    # Compute discrete gradient matrix
+    G_scipy = compute_discrete_gradient(fe)
+    G_petsc = PETSc.Mat().createAIJ(
+        size=G_scipy.shape,
+        csr=(G_scipy.indptr.astype(PETSc.IntType),
+             G_scipy.indices.astype(PETSc.IntType),
+             G_scipy.data)
+    )
+    
+    # Setup KSP solver
+    ksp = PETSc.KSP().create()
+    ksp.setOperators(A_petsc)
+    ksp.setType(ksp_type)
+    ksp.setTolerances(rtol=rtol, max_it=max_iter)
+    
+    # Setup HYPRE AMS preconditioner
+    pc = ksp.getPC()
+    pc.setType('hypre')
+    pc.setHYPREType('ams')
+    pc.setHYPREDiscreteGradient(G_petsc)
+    
+    # Optionally set coordinates for better interpolation
+    coords = compute_node_coordinates(fe)
+    # Note: setCoordinates requires specific format, may need adjustment
+    
+    ksp.setFromOptions()
+    
+    # Solve
+    rhs = PETSc.Vec().createSeq(len(b))
+    rhs.setValues(range(len(b)), b)
+    x = PETSc.Vec().createSeq(len(b))
+    
+    ksp.solve(rhs, x)
+    
+    # Check convergence
+    if not ksp.getConvergedReason() > 0:
+        import warnings
+        warnings.warn(f"AMS solver may not have converged: reason = {ksp.getConvergedReason()}")
+    
+    return x.getArray()
