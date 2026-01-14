@@ -188,7 +188,7 @@ def run_benchmark_suite(mesh_sizes=[4, 8, 12, 16]):
     solver_configs = [
         {
             'name': 'HYPRE AMS',
-            'ksp_type': 'cg',
+            'ksp_type': 'gmres',  # GMRES works better with AMS than CG
             'pc_type': 'hypre',
             'hypre_type': 'ams'
         },

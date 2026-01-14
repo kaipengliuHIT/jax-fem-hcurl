@@ -158,9 +158,10 @@ def main():
             A_petsc.zeroRows(edge_inds.astype(np.int32))
     
     # Solve with AMS
+    # Note: Use GMRES instead of CG for better AMS convergence
     solver_options = {
         'petsc_solver': {
-            'ksp_type': 'cg',
+            'ksp_type': 'gmres',  # GMRES works better with AMS than CG
             'pc_type': 'hypre',
             'hypre_type': 'ams',
             'discrete_gradient': G,

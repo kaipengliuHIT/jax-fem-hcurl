@@ -115,6 +115,21 @@ def petsc_solve(A, b, ksp_type, pc_type, pc_options=None):
             if coordinates is not None:
                 if isinstance(coordinates, onp.ndarray):
                     pc.setCoordinates(coordinates)
+            
+            # AMS-specific options for better convergence
+            opts = PETSc.Options()
+            ams_relax_type = pc_options.get('ams_relax_type', 2)  # l1-scaled Jacobi
+            opts.setValue('-pc_hypre_ams_relax_type', str(ams_relax_type))
+            
+            # AMG coarsening parameters
+            ams_alpha_theta = pc_options.get('ams_alpha_theta', 0.25)
+            ams_beta_theta = pc_options.get('ams_beta_theta', 0.25)
+            opts.setValue('-pc_hypre_ams_amg_alpha_theta', str(ams_alpha_theta))
+            opts.setValue('-pc_hypre_ams_amg_beta_theta', str(ams_beta_theta))
+            
+            # Warn user if using CG with AMS (may not converge)
+            if ksp_type == 'cg':
+                logger.warning("HYPRE AMS with CG may not converge. Consider using 'gmres' or 'fgmres' instead.")
 
         if hypre_type == 'ads':
             discrete_curl = pc_options.get('discrete_curl', None)
