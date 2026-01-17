@@ -88,9 +88,16 @@ def _to_petsc_mat(mat):
     raise TypeError(f"Unsupported matrix type for PETSc conversion: {type(mat)}")
 
 
-def petsc_solve(A, b, ksp_type, pc_type, pc_options=None):
+def petsc_solve(A, b, ksp_type, pc_type, pc_options=None, use_gpu=False):
     if pc_options is None:
         pc_options = {}
+    
+    # Configure GPU if requested
+    if use_gpu:
+        import os
+        os.environ['PETSC_OPTIONS'] = '-use_gpu_aware_mpi 0 -vec_type cuda -mat_type aijcusparse'
+        logger.info("PETSc GPU mode enabled (CUDA vectors and cuSPARSE matrices)")
+    
     rhs = PETSc.Vec().createSeq(len(b))
     rhs.setValues(range(len(b)), onp.array(b))
     ksp = PETSc.KSP().create()
